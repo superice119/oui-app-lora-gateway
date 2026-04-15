@@ -1,10 +1,20 @@
 <template>
-  <div class="app-layout">
+  <div class="app-layout" :class="{ 'sidebar-expanded': expanded }">
     <!-- ── Sidebar ─────────────────────────────────────── -->
     <aside class="sidebar">
-      <div class="sidebar-logo">
-        <span class="logo-wis">Wis</span><span class="logo-gate">Gate</span>
+      <!-- LoRa logo -->
+      <div class="sidebar-logo" @click="expanded = !expanded" title="Toggle sidebar">
+        <svg class="lora-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Radio tower / LoRa arcs symbol -->
+          <circle cx="20" cy="26" r="3" fill="#fff"/>
+          <path d="M13 20 a9 9 0 0 1 14 0" stroke="#fff" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <path d="M8.5 15.5 a15 15 0 0 1 23 0" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <path d="M4.5 11.5 a21 21 0 0 1 31 0" stroke="rgba(255,255,255,0.25)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        </svg>
+        <span v-if="expanded" class="logo-text">LoRa Gateway</span>
+        <span v-else class="logo-abbr">LG</span>
       </div>
+
       <nav class="sidebar-nav">
         <router-link
           v-for="item in navItems"
@@ -12,16 +22,23 @@
           :to="item.to"
           class="nav-btn"
           :class="{ active: isActive(item) }"
-          :title="item.label"
+          :title="expanded ? '' : item.label"
         >
           <component :is="item.icon" class="nav-icon" />
+          <span v-if="expanded" class="nav-label">{{ item.label }}</span>
         </router-link>
       </nav>
-      <!-- User icon at bottom -->
+
+      <!-- Bottom: user + collapse toggle -->
       <div class="sidebar-bottom">
         <div class="nav-btn" title="Account">
           <UserFilled class="nav-icon" />
+          <span v-if="expanded" class="nav-label">Account</span>
         </div>
+        <button class="collapse-btn" @click="expanded = !expanded" :title="expanded ? 'Collapse' : 'Expand'">
+          <ArrowLeft v-if="expanded" class="nav-icon" />
+          <ArrowRight v-else class="nav-icon" />
+        </button>
       </div>
     </aside>
 
@@ -54,11 +71,16 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   DataBoard, CreditCard, Share, TrendCharts,
-  Setting, Tools, UserFilled
+  Setting, Tools, UserFilled, ArrowLeft, ArrowRight
 } from '@element-plus/icons-vue'
 
 const route  = useRoute()
 const router = useRouter()
+
+// sidebar collapsed/expanded state (persisted in sessionStorage)
+const expanded = ref(sessionStorage.getItem('sidebar-expanded') === 'true')
+import { watch } from 'vue'
+watch(expanded, v => sessionStorage.setItem('sidebar-expanded', String(v)))
 
 // sidebar nav items
 const navItems = [
@@ -109,37 +131,61 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans
 <style scoped>
 .app-layout { display: flex; height: 100vh; overflow: hidden; }
 
-/* Sidebar */
+/* ── Sidebar ─────────────────────────────────────────────── */
 .sidebar {
-  width: 72px; min-width: 72px;
+  width: 72px;
   background: var(--sidebar-bg);
   display: flex; flex-direction: column; align-items: center;
   z-index: 100;
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  flex-shrink: 0;
 }
-.sidebar-logo {
-  height: 56px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
-}
-.logo-wis  { background: #7c3aed; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 4px; border-radius: 3px; letter-spacing: -0.3px; }
-.logo-gate { color: #fff; font-size: 12px; font-weight: 600; margin-left: 2px; }
+.app-layout.sidebar-expanded .sidebar { width: 210px; align-items: stretch; }
 
-.sidebar-nav  { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 0 8px; flex: 1; }
-.sidebar-bottom { padding: 0 8px 16px; width: 100%; }
+/* Logo */
+.sidebar-logo {
+  height: 56px; display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 0 12px; cursor: pointer; flex-shrink: 0;
+  transition: padding 0.22s;
+}
+.app-layout.sidebar-expanded .sidebar-logo { justify-content: flex-start; }
+.lora-icon { width: 36px; height: 36px; flex-shrink: 0; }
+.logo-text  { color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap; letter-spacing: 0.2px; }
+.logo-abbr  { color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+
+/* Nav */
+.sidebar-nav { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 0 8px; flex: 1; }
+.sidebar-bottom { padding: 0 8px 12px; width: 100%; display: flex; flex-direction: column; gap: 4px; }
 
 .nav-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 100%; height: 48px; border-radius: 10px;
+  width: 100%; height: 48px; border-radius: 10px; padding: 0 13px;
   color: var(--sidebar-icon); text-decoration: none;
-  cursor: pointer;
+  cursor: pointer; background: none; border: none;
   transition: background 0.15s, color 0.15s;
+  gap: 12px; white-space: nowrap; overflow: hidden;
 }
+.app-layout.sidebar-expanded .nav-btn { justify-content: flex-start; }
 .nav-btn:hover { background: rgba(124,58,237,0.3); color: rgba(255,255,255,0.85); }
 .nav-btn.active { background: var(--sidebar-active-bg); color: var(--sidebar-icon-active); }
-.nav-icon { width: 22px; height: 22px; }
+.nav-icon { width: 22px; height: 22px; flex-shrink: 0; }
+.nav-label { font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.15s 0.05s; }
+.app-layout.sidebar-expanded .nav-label { opacity: 1; }
 
-/* Main */
+/* Collapse button */
+.collapse-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 36px; border-radius: 8px; padding: 0 13px;
+  color: rgba(255,255,255,0.35); background: none; border: none; cursor: pointer;
+  transition: background 0.15s, color 0.15s; gap: 12px;
+}
+.app-layout.sidebar-expanded .collapse-btn { justify-content: flex-start; }
+.collapse-btn:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+
+/* ── Main ─────────────────────────────────────────────────── */
 .main-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--page-bg); }
 
-/* Page header */
 .page-header { background: var(--header-bg); border-bottom: 1px solid var(--border-color); padding: 0 32px; flex-shrink: 0; }
 .device-name { font-size: 22px; font-weight: 700; color: var(--heading-color); padding: 20px 0 16px; letter-spacing: -0.3px; }
 .page-tabs { display: flex; gap: 0; }
@@ -153,6 +199,5 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans
 .tab-item:hover { color: var(--heading-color); }
 .tab-item.active { color: var(--heading-color); font-weight: 700; border-bottom-color: var(--heading-color); }
 
-/* Page content */
 .page-content { flex: 1; overflow-y: auto; background: var(--page-bg); }
 </style>
