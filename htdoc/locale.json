@@ -1,0 +1,120 @@
+{
+  "en": {
+    "menu": {
+      "overview": "Overview",
+      "service":  "Service Control",
+      "config":   "Configuration"
+    },
+    "overview": {
+      "title":          "Gateway Overview",
+      "chip_id":        "Chip ID",
+      "eui":            "Station EUI",
+      "usb":            "USB Device",
+      "active_service": "Active Service",
+      "running":        "Running",
+      "stopped":        "Stopped",
+      "uptime":         "Uptime",
+      "usb_ok":         "Connected",
+      "usb_fail":       "Not Found"
+    },
+    "service": {
+      "title":          "Service Control",
+      "active_service": "Active Service",
+      "switch_warning": "Switching services will stop the current one. Continue?",
+      "start":          "Start",
+      "stop":           "Stop",
+      "restart":        "Restart",
+      "status":         "Status",
+      "pid":            "PID",
+      "uptime":         "Uptime"
+    },
+    "config": {
+      "title":          "Configuration",
+      "save_restart":   "Save & Restart",
+      "basicstation": {
+        "tab":       "basicstation",
+        "tc_uri":    "LNS Address (tc.uri)",
+        "cups_uri":  "CUPS Address (cups.uri)",
+        "auth_mode": "Authentication",
+        "api_key":   "API Key",
+        "no_auth":   "No Auth",
+        "tls_server":"TLS Server Auth",
+        "tls_mutual":"TLS Mutual Auth"
+      },
+      "lora_pkt_fwd": {
+        "tab":            "lora_pkt_fwd",
+        "server_address": "Network Server",
+        "serv_port_up":   "Uplink Port",
+        "serv_port_down": "Downlink Port"
+      }
+    },
+    "common": {
+      "loading":  "Loading...",
+      "saved":    "Saved",
+      "error":    "Error",
+      "confirm":  "Confirm",
+      "cancel":   "Cancel",
+      "seconds":  "s",
+      "unknown":  "Unknown"
+    }
+  },
+  "zh": {
+    "menu": {
+      "overview": "概览",
+      "service":  "服务控制",
+      "config":   "配置"
+    },
+    "overview": {
+      "title":          "网关概览",
+      "chip_id":        "芯片 ID",
+      "eui":            "Station EUI",
+      "usb":            "USB 设备",
+      "active_service": "活跃服务",
+      "running":        "运行中",
+      "stopped":        "已停止",
+      "uptime":         "运行时长",
+      "usb_ok":         "已连接",
+      "usb_fail":       "未找到"
+    },
+    "service": {
+      "title":          "服务控制",
+      "active_service": "活跃服务",
+      "switch_warning": "切换服务将停止当前服务，确定继续？",
+      "start":          "启动",
+      "stop":           "停止",
+      "restart":        "重启",
+      "status":         "状态",
+      "pid":            "进程 ID",
+      "uptime":         "运行时长"
+    },
+    "config": {
+      "title":          "配置",
+      "save_restart":   "保存并重启",
+      "basicstation": {
+        "tab":       "basicstation",
+        "tc_uri":    "LNS 地址 (tc.uri)",
+        "cups_uri":  "CUPS 地址 (cups.uri)",
+        "auth_mode": "认证方式",
+        "api_key":   "API Key",
+        "no_auth":   "不认证",
+        "tls_server":"TLS 服务端认证",
+        "tls_mutual":"TLS 双向认证"
+      },
+      "lora_pkt_fwd": {
+        "tab":            "lora_pkt_fwd",
+        "server_address": "网络服务器",
+        "serv_port_up":   "上行端口",
+        "serv_port_down": "下行端口"
+      }
+    },
+    "common": {
+      "loading":  "加载中...",
+      "saved":    "已保存",
+      "error":    "错误",
+      "confirm":  "确认",
+      "cancel":   "取消",
+      "seconds":  "秒",
+      "unknown":  "未知"
+    }
+  }
+}

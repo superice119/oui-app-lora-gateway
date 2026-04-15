@@ -1,0 +1,14 @@
+// LoRa Gateway theme — overrides Element Plus CSS variables
+:root {
+  --el-color-primary: #0d6b8e;
+  --el-color-primary-light-3: #3d92ae;
+  --el-color-primary-light-5: #7db8cc;
+  --el-color-primary-light-7: #b0d5e2;
+  --el-color-primary-light-8: #cde5ee;
+  --el-color-primary-light-9: #e6f3f7;
+  --el-color-primary-dark-2: #0a5672;
+
+  --lora-bg-sidebar: #1a2332;
+  --lora-bg-content: #f5f7fa;
+  --lora-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}

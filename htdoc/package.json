@@ -1,0 +1,21 @@
+{
+  "name": "oui-app-lora-gateway",
+  "scripts": {
+    "dev": "vite --open",
+    "build": "vite build",
+    "mock": "node ../mock/server.mjs"
+  },
+  "devDependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@intlify/unplugin-vue-i18n": "^4.0.0",
+    "@vitejs/plugin-vue": "^5.1.2",
+    "element-plus": "^2.7.8",
+    "sass": "^1.77.0",
+    "vite": "^5.4.1",
+    "vite-plugin-compression": "^0.5.1",
+    "vue": "^3.5.0",
+    "vue-i18n": "^9.14.0",
+    "vue-router": "^4.4.0"
+  }
+}
+

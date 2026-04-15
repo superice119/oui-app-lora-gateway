@@ -1,0 +1,13 @@
+config lora 'global'
+    option active_service 'basicstation'
+
+config basicstation
+    option tc_uri 'ws://localhost:3001'
+    option cups_uri ''
+    option auth_mode 'no_auth'
+    option api_key ''
+
+config lora_pkt_fwd
+    option server_address ''
+    option serv_port_up '1700'
+    option serv_port_down '1700'
