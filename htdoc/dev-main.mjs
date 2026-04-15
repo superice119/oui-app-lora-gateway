@@ -1,57 +1,59 @@
-/**
- * Dev entry point — only used during `npm run dev` (not in production build).
- * Provides minimal OUI stubs so the app works without the full OUI runtime.
- */
 import { createApp } from 'vue'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import './styles/variables.scss'
 import { createI18n } from 'vue-i18n'
 import { createRouter, createWebHashHistory } from 'vue-router'
+import DevShell from './dev-shell.vue'
+import messages from './locale.json'
 
-// ── OUI stub: $oui.call(module, func, params) → POST /oui-rpc ──
-const $oui = {
-  async call(module, func, params) {
-    const res = await fetch('/oui-rpc', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ module, func, params })
-    })
-    const data = await res.json()
-    if (data.code !== 0) throw new Error(data.error || 'RPC error')
-    return data.result
-  }
-}
-
-// ── Router ──
+// Pages
 import IndexPage   from './index.vue'
-import ServicePage from './service.vue'
-import ConfigPage  from './config.vue'
+import LoraPage    from './service.vue'   // LoRa Configuration
+import ConfigPage  from './config.vue'    // keep for now as redirect target
+import PlaceholderPage from './placeholder.vue'
 
-const router = createRouter({
-  history: createWebHashHistory(),
-  routes: [
-    { path: '/',        component: IndexPage },
-    { path: '/service', component: ServicePage },
-    { path: '/config',  component: ConfigPage },
-    { path: '/:pathMatch(.*)*', redirect: '/' }
-  ]
-})
-
-// ── i18n ──
-import locale from './locale.json'
 const i18n = createI18n({
   legacy: false,
   locale: 'en',
   fallbackLocale: 'en',
-  messages: { en: locale.en, zh: locale.zh }
+  messages,
 })
 
-// ── Dev shell wrapper (sidebar + nav) ──
-import DevShell from './dev-shell.vue'
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes: [
+    { path: '/',     component: IndexPage   },
+    { path: '/lora', component: LoraPage    },
+    { path: '/service', redirect: '/lora'   },
+    { path: '/config',  component: ConfigPage },
+    { path: '/net',     component: PlaceholderPage, meta: { title: 'Network'          } },
+    { path: '/diag',    component: PlaceholderPage, meta: { title: 'Diagnostics'      } },
+    { path: '/sys',     component: PlaceholderPage, meta: { title: 'System Settings'  } },
+    { path: '/ext',     component: PlaceholderPage, meta: { title: 'Extensions'       } },
+    { path: '/:pathMatch(.*)*', redirect: '/' }
+  ]
+})
 
 const app = createApp(DevShell)
-app.config.globalProperties.$oui = $oui
+
+// $oui stub: maps to /oui-rpc (proxied to mock server in dev)
+app.config.globalProperties.$oui = {
+  call(module, func, params = {}) {
+    return fetch('/oui-rpc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ module, func, params })
+    })
+    .then(r => r.json())
+    .then(({ code, error, result }) => {
+      if (code !== 0) throw new Error(error || 'RPC error ' + code)
+      return result
+    })
+  }
+}
+
+app.use(i18n)
 app.use(ElementPlus)
 app.use(router)
-app.use(i18n)
 app.mount('#app')
