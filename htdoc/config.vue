@@ -1,40 +1,65 @@
 <template>
   <div class="rak-page">
-    <!-- basicstation section -->
-    <div class="section-header">
-      <span class="section-title">Basics Station</span>
-      <el-tag v-if="activeTab === 'basicstation'" type="success" size="small" effect="plain">Active</el-tag>
-    </div>
-    <div class="info-section" v-show="activeTab === 'basicstation'">
 
+    <!-- Segmented-control tab bar -->
+    <div class="seg-bar">
+      <div class="seg-control">
+        <button
+          class="seg-btn"
+          :class="{ active: activeTab === 'basicstation' }"
+          @click="activeTab = 'basicstation'"
+        >
+          Basics Station
+        </button>
+        <button
+          class="seg-btn"
+          :class="{ active: activeTab === 'lora_pkt_fwd' }"
+          @click="activeTab = 'lora_pkt_fwd'"
+        >
+          Packet Forwarder
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Basics Station form ──────────────────── -->
+    <div v-show="activeTab === 'basicstation'" class="info-section">
+
+      <!-- LNS Address -->
       <div class="form-row">
         <div class="form-label">{{ t('config.basicstation.tc_uri') }}</div>
         <div class="form-divider" />
         <div class="form-content">
-          <div class="input-wrap">
-            <label class="field-label">LNS WebSocket URI</label>
+          <div class="input-group">
+            <label>LNS WebSocket URI</label>
             <input v-model="bs.tc_uri" class="rak-input" placeholder="ws://your-lns:3001" />
           </div>
         </div>
       </div>
 
+      <!-- CUPS Address -->
       <div class="form-row">
         <div class="form-label">{{ t('config.basicstation.cups_uri') }}</div>
         <div class="form-divider" />
         <div class="form-content">
-          <div class="input-wrap">
-            <label class="field-label">CUPS URI (optional)</label>
+          <div class="input-group">
+            <label>CUPS URI (optional)</label>
             <input v-model="bs.cups_uri" class="rak-input" placeholder="https://cups-server" />
           </div>
         </div>
       </div>
 
+      <!-- Authentication -->
       <div class="form-row">
         <div class="form-label">{{ t('config.basicstation.auth_mode') }}</div>
         <div class="form-divider" />
         <div class="form-content">
           <div class="radio-stack">
-            <label class="rak-radio" v-for="m in authModes" :key="m.value" @click="bs.auth_mode = m.value">
+            <label
+              v-for="m in authModes"
+              :key="m.value"
+              class="rak-radio"
+              @click="bs.auth_mode = m.value"
+            >
               <span class="radio-circle" :class="{ checked: bs.auth_mode === m.value }">
                 <span class="radio-dot" />
               </span>
@@ -44,75 +69,60 @@
         </div>
       </div>
 
+      <!-- API Key (visible only when auth enabled) -->
       <div class="form-row" v-if="bs.auth_mode !== 'no_auth'">
         <div class="form-label">{{ t('config.basicstation.api_key') }}</div>
         <div class="form-divider" />
         <div class="form-content">
-          <div class="input-wrap">
-            <label class="field-label">API Key</label>
+          <div class="input-group">
+            <label>API Key</label>
             <input v-model="bs.api_key" class="rak-input" type="password" placeholder="••••••••" />
           </div>
         </div>
       </div>
 
-    </div>
+    </div><!-- /basicstation -->
 
-    <!-- Tab switcher (work mode style) -->
-    <div class="section-divider" />
-    <div class="info-section">
-      <div class="form-row">
-        <div class="form-label">Active section</div>
-        <div class="form-divider" />
-        <div class="form-content">
-          <div class="tab-switch">
-            <button class="ts-btn" :class="{ active: activeTab === 'basicstation' }" @click="activeTab = 'basicstation'">Basics station</button>
-            <button class="ts-btn" :class="{ active: activeTab === 'lora_pkt_fwd' }" @click="activeTab = 'lora_pkt_fwd'">Packet forwarder</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- ── Packet Forwarder form ─────────────────── -->
+    <div v-show="activeTab === 'lora_pkt_fwd'" class="info-section">
 
-    <!-- lora_pkt_fwd section -->
-    <div class="section-header">
-      <span class="section-title">Packet Forwarder</span>
-      <el-tag v-if="activeTab === 'lora_pkt_fwd'" type="success" size="small" effect="plain">Active</el-tag>
-    </div>
-    <div class="info-section" v-show="activeTab === 'lora_pkt_fwd'">
-
+      <!-- Network Server -->
       <div class="form-row">
         <div class="form-label">{{ t('config.lora_pkt_fwd.server_address') }}</div>
         <div class="form-divider" />
         <div class="form-content">
-          <div class="input-wrap">
-            <label class="field-label">Network Server Address</label>
+          <div class="input-group">
+            <label>Network Server Address</label>
             <input v-model="pf.server_address" class="rak-input" placeholder="eu1.cloud.thethings.network" />
           </div>
         </div>
       </div>
 
+      <!-- Ports -->
       <div class="form-row">
         <div class="form-label">{{ t('config.lora_pkt_fwd.serv_port_up') }}</div>
         <div class="form-divider" />
         <div class="form-content row-inline">
-          <div class="input-wrap narrow">
-            <label class="field-label">Uplink Port</label>
+          <div class="input-group narrow">
+            <label>Uplink Port</label>
             <input v-model.number="pf.serv_port_up" class="rak-input" type="number" />
           </div>
-          <div class="input-wrap narrow">
-            <label class="field-label">Downlink Port</label>
+          <div class="input-group narrow">
+            <label>Downlink Port</label>
             <input v-model.number="pf.serv_port_down" class="rak-input" type="number" />
           </div>
         </div>
       </div>
 
-    </div>
+    </div><!-- /lora_pkt_fwd -->
 
-    <!-- Footer save button -->
+    <!-- Sticky save footer -->
     <div class="page-footer">
       <button class="rak-btn primary pill" :disabled="saving" @click="handleSave">
         {{ saving ? 'Saving...' : t('config.save_restart') }}
       </button>
     </div>
+
   </div>
 </template>
 
@@ -160,66 +170,131 @@ onMounted(loadConfig)
 </script>
 
 <style scoped>
-.rak-page { background: var(--page-bg); min-height: 100%; }
+.rak-page {
+  background: var(--page-bg);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Segmented control bar */
+.seg-bar {
+  padding: 16px 32px 0;
+  background: var(--content-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+.seg-control {
+  display: inline-flex;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: -1px;
+}
+.seg-btn {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--label-color);
+  background: transparent;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+.seg-btn.active {
+  background: #ffffff;
+  color: var(--heading-color);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+  font-weight: 600;
+}
+.seg-btn:hover:not(.active) { color: var(--heading-color); }
+
+/* Form section */
 .info-section { background: var(--content-bg); }
 
-.section-header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 16px 32px 8px;
+.form-row {
+  display: flex; align-items: flex-start; min-height: 60px;
+  border-bottom: 1px solid var(--border-color);
   background: var(--content-bg);
-  border-top: 1px solid var(--border-color);
 }
-.section-title { font-size: 15px; font-weight: 600; color: var(--heading-color); }
-.section-divider { height: 8px; background: var(--page-bg); }
-
-.form-row { display: flex; align-items: flex-start; min-height: 60px; border-bottom: 1px solid var(--border-color); background: var(--content-bg); }
 .form-row:last-child { border-bottom: none; }
-.form-label { width: 220px; min-width: 220px; padding: 18px 32px; font-size: 14px; color: var(--label-color); display: flex; align-items: flex-start; padding-top: 20px; }
-.form-divider { width: 1px; background: var(--divider-color); align-self: stretch; flex-shrink: 0; }
-.form-content { flex: 1; padding: 16px 32px; display: flex; align-items: flex-start; flex-wrap: wrap; }
+
+.form-label {
+  width: 240px; min-width: 240px; padding: 18px 32px;
+  font-size: 14px; color: var(--label-color);
+  display: flex; align-items: flex-start; padding-top: 20px;
+}
+.form-divider {
+  width: 1px; background: var(--divider-color);
+  align-self: stretch; flex-shrink: 0;
+}
+.form-content {
+  flex: 1; padding: 16px 32px;
+  display: flex; align-items: flex-start; flex-wrap: wrap;
+}
 .row-inline { gap: 20px; align-items: flex-start; }
 
-/* Input */
-.input-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 280px; }
-.input-wrap.narrow { min-width: 140px; }
-.field-label { font-size: 12px; color: var(--label-color); }
-.rak-input {
-  height: 38px; padding: 0 12px; border: 1px solid var(--border-color);
-  border-radius: 6px; font-size: 14px; color: var(--heading-color);
-  background: #fff; outline: none; transition: border-color 0.15s; width: 100%;
+/* Input group (label above input) */
+.input-group {
+  display: flex; flex-direction: column; gap: 5px;
+  min-width: 300px;
 }
-.rak-input:focus { border-color: var(--el-color-primary); }
+.input-group.narrow { min-width: 140px; }
+.input-group label {
+  font-size: 12px; color: var(--label-color); font-weight: 500;
+}
+.rak-input {
+  height: 38px; padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px; font-size: 14px;
+  color: var(--heading-color); background: #fff;
+  outline: none; transition: border-color 0.15s; width: 100%;
+}
+.rak-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }
 .rak-input::placeholder { color: #d1d5db; }
 
-/* Radio */
+/* Custom radio */
 .radio-stack { display: flex; flex-direction: column; gap: 12px; padding: 2px 0; }
-.rak-radio { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.radio-circle { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d1d5db; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color 0.15s; }
+.rak-radio { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+.radio-circle {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid #d1d5db;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: border-color 0.15s;
+}
 .radio-circle.checked { border-color: #1e1048; }
-.radio-dot { width: 10px; height: 10px; border-radius: 50%; background: transparent; transition: background 0.15s; }
+.radio-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: transparent; transition: background 0.15s;
+}
 .radio-circle.checked .radio-dot { background: #1e1048; }
 .radio-label { font-size: 14px; color: #374151; }
 
-/* Tab switch */
-.tab-switch { display: flex; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
-.ts-btn { padding: 8px 20px; font-size: 14px; background: #fff; border: none; cursor: pointer; color: var(--label-color); transition: background 0.15s, color 0.15s; }
-.ts-btn.active { background: var(--el-color-primary-light-9); color: var(--el-color-primary); font-weight: 600; }
-.ts-btn:not(:last-child) { border-right: 1px solid var(--border-color); }
-
-/* Footer */
+/* Sticky footer */
 .page-footer {
-  position: sticky; bottom: 0; background: var(--content-bg);
+  position: sticky; bottom: 0;
+  background: var(--content-bg);
   border-top: 1px solid var(--border-color);
   padding: 16px 32px; display: flex; justify-content: flex-end;
+  margin-top: auto;
 }
 .rak-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 22px; border-radius: 20px; font-size: 14px; font-weight: 500;
   background: #fff; border: 1px solid var(--border-color); color: #374151;
-  cursor: pointer; transition: background 0.15s;
+  cursor: pointer; transition: background 0.15s, box-shadow 0.15s;
 }
-.rak-btn.primary { background: var(--el-color-primary); border-color: var(--el-color-primary); color: #fff; }
-.rak-btn.primary:hover:not(:disabled) { background: var(--el-color-primary-dark-2); }
+.rak-btn.primary {
+  background: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+  color: #fff;
+}
+.rak-btn.primary:hover:not(:disabled) {
+  background: var(--el-color-primary-dark-2);
+  box-shadow: 0 4px 12px rgba(124,58,237,0.35);
+}
 .rak-btn.pill { border-radius: 24px; padding: 10px 28px; }
 .rak-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 </style>

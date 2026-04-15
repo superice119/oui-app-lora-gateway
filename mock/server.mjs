@@ -123,6 +123,27 @@ const handlers = {
 
   'lora-gateway/get_config': () => JSON.parse(JSON.stringify(state.config)),
 
+
+  // ── system performance ──
+  'system/performance': () => ({
+    cpu:       Math.floor(Math.random() * 30 + 5),
+    mem_used:  Math.floor(45 + Math.random() * 10),
+    mem_total: 123
+  }),
+
+  // ── LoRa statistics ──
+  'lora-gateway/get_stats': () => ({
+    rx:             Math.floor(Math.random() * 5),
+    tx:             Math.floor(Math.random() * 3),
+    devices_active: Math.floor(Math.random() * 3),
+    devices_busy:   0
+  }),
+
+  // ── Chip hardware test ──
+  'lora-gateway/chip_test': () => ({
+    result: 'SX1302 ChipID=1 — Hardware OK'
+  }),
+
   'lora-gateway/set_config': (p) => {
     if (p?.basicstation) {
       Object.assign(state.config.basicstation, p.basicstation)

@@ -1,15 +1,20 @@
 <template>
   <div class="rak-page">
-    <!-- Work mode row -->
     <div class="info-section">
+
+      <!-- Row 1: Work mode -->
       <div class="form-row">
         <div class="form-label">Work mode</div>
         <div class="form-divider" />
         <div class="form-content">
           <div class="radio-stack">
-            <label class="rak-radio" v-for="svc in services" :key="svc.value"
+            <label
+              v-for="svc in services"
+              :key="svc.value"
+              class="rak-radio"
               :class="{ selected: pendingService === svc.value }"
-              @click="onServiceSwitch(svc.value)">
+              @click="onServiceSwitch(svc.value)"
+            >
               <span class="radio-circle" :class="{ checked: pendingService === svc.value }">
                 <span class="radio-dot" />
               </span>
@@ -19,7 +24,7 @@
         </div>
       </div>
 
-      <!-- Service status row -->
+      <!-- Row 2: Service status -->
       <div class="form-row">
         <div class="form-label">{{ t('service.status') }}</div>
         <div class="form-divider" />
@@ -32,25 +37,37 @@
         </div>
       </div>
 
-      <!-- Controls row -->
+      <!-- Row 3: Controls -->
       <div class="form-row">
         <div class="form-label">Controls</div>
         <div class="form-divider" />
         <div class="form-content">
           <div class="btn-group">
-            <button class="rak-btn" :disabled="acting || status.running" @click="doAction('start')">
-              <span class="btn-dot green" /> {{ t('service.start') }}
+            <button
+              class="rak-btn"
+              :disabled="acting || status.running"
+              @click="doAction('start')">
+              <span class="btn-dot green" />
+              {{ t('service.start') }}
             </button>
-            <button class="rak-btn" :disabled="acting || !status.running" @click="doAction('stop')">
-              <span class="btn-dot red" /> {{ t('service.stop') }}
+            <button
+              class="rak-btn"
+              :disabled="acting || !status.running"
+              @click="doAction('stop')">
+              <span class="btn-dot red" />
+              {{ t('service.stop') }}
             </button>
-            <button class="rak-btn primary" :disabled="acting" @click="doAction('restart')">
+            <button
+              class="rak-btn primary"
+              :disabled="acting"
+              @click="doAction('restart')">
               {{ t('service.restart') }}
             </button>
           </div>
         </div>
       </div>
-    </div>
+
+    </div><!-- /info-section -->
   </div>
 </template>
 
@@ -69,13 +86,15 @@ let timer
 
 const services = [
   { value: 'lora_pkt_fwd', label: 'Packet forwarder' },
-  { value: 'basicstation',  label: 'Basics station'   },
+  { value: 'basicstation',  label: 'Basics station'  },
 ]
 
 const uptimeStr = computed(() => {
   const s = status.value.uptime
   if (!s) return ''
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
   if (h > 0) return h + 'h ' + m + 'm'
   if (m > 0) return m + 'm ' + sec + 's'
   return sec + 's'
@@ -103,7 +122,7 @@ async function onServiceSwitch(newVal) {
   try {
     await ElMessageBox.confirm(t('service.switch_warning'), t('common.confirm'), {
       confirmButtonText: t('common.confirm'),
-      cancelButtonText: t('common.cancel'),
+      cancelButtonText:  t('common.cancel'),
       type: 'warning'
     })
     acting.value = true
@@ -121,36 +140,53 @@ onUnmounted(() => clearInterval(timer))
 <style scoped>
 .rak-page { background: var(--page-bg); min-height: 100%; }
 .info-section { background: var(--content-bg); }
-.form-row { display: flex; align-items: flex-start; min-height: 60px; border-bottom: 1px solid var(--border-color); }
+
+/* Form rows */
+.form-row {
+  display: flex; align-items: flex-start; min-height: 60px;
+  border-bottom: 1px solid var(--border-color);
+}
 .form-row:last-child { border-bottom: none; }
-.form-label { width: 220px; min-width: 220px; padding: 18px 32px; font-size: 14px; color: var(--label-color); display: flex; align-items: flex-start; padding-top: 20px; }
+
+.form-label {
+  width: 240px; min-width: 240px; padding: 18px 32px;
+  font-size: 14px; color: var(--label-color);
+  display: flex; align-items: flex-start; padding-top: 20px;
+}
 .form-divider { width: 1px; background: var(--divider-color); align-self: stretch; flex-shrink: 0; }
 .form-content { flex: 1; padding: 16px 32px; display: flex; align-items: flex-start; }
 .row-inline { align-items: center; gap: 10px; }
 
-/* Radio stack */
+/* Custom radio buttons */
 .radio-stack { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
-.rak-radio { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.rak-radio { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
 .radio-circle {
-  width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d1d5db;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  transition: border-color 0.15s;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid #d1d5db;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: border-color 0.15s;
 }
 .radio-circle.checked { border-color: #1e1048; }
-.radio-dot { width: 10px; height: 10px; border-radius: 50%; background: transparent; transition: background 0.15s; }
+.radio-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: transparent; transition: background 0.15s;
+}
 .radio-circle.checked .radio-dot { background: #1e1048; }
 .radio-label { font-size: 14px; color: #374151; }
 
-/* Status */
+/* Status indicator */
 .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.status-dot.run { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); animation: pulse 2s infinite; }
+.status-dot.run  { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); animation: pulse 2s infinite; }
 .status-dot.stop { background: #9ca3af; }
-@keyframes pulse { 0%,100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.2); } 50% { box-shadow: 0 0 0 6px rgba(16,185,129,0.05); } }
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.20); }
+  50%       { box-shadow: 0 0 0 6px rgba(16,185,129,0.05); }
+}
 .status-label { font-size: 14px; color: var(--heading-color); font-weight: 500; }
 .muted { font-size: 13px; color: var(--label-color); }
 
-/* Buttons */
-.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+/* Control buttons */
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .rak-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 7px 20px; border-radius: 20px; font-size: 14px; font-weight: 500;
@@ -161,7 +197,7 @@ onUnmounted(() => clearInterval(timer))
 .rak-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .rak-btn.primary { background: var(--el-color-primary); border-color: var(--el-color-primary); color: #fff; }
 .rak-btn.primary:hover:not(:disabled) { background: var(--el-color-primary-dark-2); }
-.btn-dot { width: 8px; height: 8px; border-radius: 50%; }
+.btn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .btn-dot.green { background: #10b981; }
 .btn-dot.red   { background: #ef4444; }
 </style>
