@@ -1,14 +1,26 @@
-// LoRa Gateway theme — overrides Element Plus CSS variables
+// WisGate-style theme — Element Plus + app palette
 :root {
-  --el-color-primary: #0d6b8e;
-  --el-color-primary-light-3: #3d92ae;
-  --el-color-primary-light-5: #7db8cc;
-  --el-color-primary-light-7: #b0d5e2;
-  --el-color-primary-light-8: #cde5ee;
-  --el-color-primary-light-9: #e6f3f7;
-  --el-color-primary-dark-2: #0a5672;
+  // Element Plus primary (purple)
+  --el-color-primary:         #7c3aed;
+  --el-color-primary-light-3: #9d68f0;
+  --el-color-primary-light-5: #be95f3;
+  --el-color-primary-light-7: #ddc3f8;
+  --el-color-primary-light-8: #ecdffb;
+  --el-color-primary-light-9: #f5f0fe;
+  --el-color-primary-dark-2:  #6d28d9;
 
-  --lora-bg-sidebar: #1a2332;
-  --lora-bg-content: #f5f7fa;
-  --lora-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  // App layout palette
+  --sidebar-bg:           #1e1048;
+  --sidebar-active-bg:    #6c3fc5;
+  --sidebar-icon:         rgba(255, 255, 255, 0.50);
+  --sidebar-icon-active:  #ffffff;
+  --page-bg:              #f0f0f4;
+  --header-bg:            #ffffff;
+  --content-bg:           #ffffff;
+  --label-color:          #6b7280;
+  --heading-color:        #111827;
+  --border-color:         #e5e7eb;
+  --divider-color:        #d1d5db;
+  --tab-active-color:     #111827;
+  --tab-color:            #6b7280;
 }

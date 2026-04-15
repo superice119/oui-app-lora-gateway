@@ -1,81 +1,62 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <h2>{{ t('overview.title') }}</h2>
+  <div class="rak-page">
+    <div v-if="loading" class="spinner-wrap">
+      <el-icon class="spin" :size="28" color="#7c3aed"><Loading /></el-icon>
     </div>
-
-    <div v-if="loading" class="loading-center">
-      <el-icon class="spin" size="32"><Loading /></el-icon>
-    </div>
-
     <template v-else>
-      <!-- Top stat cards -->
-      <el-row :gutter="16" class="stat-row">
-        <el-col :span="8">
-          <el-card class="stat-card" shadow="hover">
-            <div class="stat-label">{{ t('overview.active_service') }}</div>
-            <div class="stat-value service-name">{{ status.active_service || '--' }}</div>
-            <StatusBadge
-              :running="status.running"
-              :label="status.running ? t('overview.running') : t('overview.stopped')"
-            />
-          </el-card>
-        </el-col>
-
-        <el-col :span="8">
-          <el-card class="stat-card" shadow="hover">
-            <div class="stat-label">{{ t('overview.uptime') }}</div>
-            <div class="stat-value">{{ uptimeStr }}</div>
-            <div class="stat-sub">{{ status.running ? 'Active' : 'Service stopped' }}</div>
-          </el-card>
-        </el-col>
-
-        <el-col :span="8">
-          <el-card class="stat-card" shadow="hover">
-            <div class="stat-label">{{ t('overview.usb') }}</div>
-            <div class="stat-value usb-path">{{ status.usb_path || '/dev/ttyACM0' }}</div>
-            <StatusBadge
-              :running="status.usb_ok"
-              :label="status.usb_ok ? t('overview.usb_ok') : t('overview.usb_fail')"
-            />
-          </el-card>
-        </el-col>
-      </el-row>
-
-      <!-- Hardware info card -->
-      <el-card class="info-card" shadow="never">
-        <template #header>
-          <span class="card-title">Hardware Info</span>
-        </template>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item :label="t('overview.chip_id')">
-            <el-tag type="info" size="small">{{ status.chip_id || t('common.unknown') }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('overview.eui')">
-            <code class="eui-code">{{ status.eui || t('common.unknown') }}</code>
-          </el-descriptions-item>
-          <el-descriptions-item label="USB Path">
-            {{ status.usb_path || '/dev/ttyACM0' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Frequency Band">
-            868 MHz (EU868)
-          </el-descriptions-item>
-        </el-descriptions>
-      </el-card>
+      <!-- Status banner -->
+      <div class="status-banner" :class="status.running ? 'is-running' : 'is-stopped'">
+        <div class="status-left">
+          <span class="status-dot" />
+          <span class="status-text">{{ status.running ? t('overview.running') : t('overview.stopped') }}</span>
+          <span class="status-svc">{{ status.active_service }}</span>
+        </div>
+        <div v-if="status.running" class="status-uptime">{{ t('overview.uptime') }}: {{ uptimeStr }}</div>
+      </div>
+      <!-- Info rows -->
+      <div class="info-section">
+        <div class="form-row">
+          <div class="form-label">{{ t('overview.chip_id') }}</div>
+          <div class="form-divider" />
+          <div class="form-content"><code class="mono-val">{{ status.chip_id || t('common.unknown') }}</code></div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">{{ t('overview.eui') }}</div>
+          <div class="form-divider" />
+          <div class="form-content"><code class="mono-val eui">{{ status.eui || t('common.unknown') }}</code></div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">{{ t('overview.usb') }}</div>
+          <div class="form-divider" />
+          <div class="form-content row-inline">
+            <code class="mono-val">{{ status.usb_path || '/dev/ttyACM0' }}</code>
+            <span class="inline-badge" :class="status.usb_ok ? 'ok' : 'err'">
+              {{ status.usb_ok ? t('overview.usb_ok') : t('overview.usb_fail') }}
+            </span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">Frequency Band</div>
+          <div class="form-divider" />
+          <div class="form-content"><span class="tag-pill">EU868</span></div>
+        </div>
+        <div class="form-row">
+          <div class="form-label">{{ t('overview.active_service') }}</div>
+          <div class="form-divider" />
+          <div class="form-content"><span class="tag-pill purple">{{ status.active_service }}</span></div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getCurrentInstance } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
-import StatusBadge from './components/StatusBadge.vue'
 
 const { t } = useI18n()
 const { proxy } = getCurrentInstance()
-
 const loading = ref(true)
 const status  = ref({})
 let timer
@@ -86,41 +67,64 @@ const uptimeStr = computed(() => {
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
   const sec = s % 60
-  return `${h}h ${m}m ${sec}s`
+  if (h > 0) return h + 'h ' + m + 'm'
+  if (m > 0) return m + 'm ' + sec + 's'
+  return sec + 's'
 })
 
 async function fetchStatus() {
-  try {
-    status.value = await proxy.$oui.call('lora-gateway', 'get_status')
-  } catch (e) {
-    console.error('get_status failed', e)
-  } finally {
-    loading.value = false
-  }
+  try { status.value = await proxy.$oui.call('lora-gateway', 'get_status') }
+  catch (e) { console.error(e) }
+  finally { loading.value = false }
 }
-
-onMounted(() => {
-  fetchStatus()
-  timer = setInterval(fetchStatus, 5000)
-})
+onMounted(() => { fetchStatus(); timer = setInterval(fetchStatus, 5000) })
 onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>
-.page-container { padding: 24px; }
-.page-header { margin-bottom: 20px; }
-.page-header h2 { font-size: 20px; color: #1a2332; }
-.stat-row { margin-bottom: 16px; }
-.stat-card { text-align: center; padding: 8px 0; }
-.stat-label { font-size: 12px; color: #909399; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-.stat-value { font-size: 22px; font-weight: 600; color: #1a2332; margin-bottom: 10px; }
-.stat-sub { font-size: 12px; color: #c0c4cc; margin-top: 6px; }
-.service-name { color: #0d6b8e; }
-.usb-path { font-size: 14px; font-family: monospace; }
-.info-card { margin-top: 4px; }
-.card-title { font-weight: 600; color: #303133; }
-.eui-code { font-family: monospace; background: #f5f7fa; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
-.loading-center { display: flex; justify-content: center; align-items: center; height: 200px; }
+.rak-page { background: var(--page-bg); min-height: 100%; }
+.spinner-wrap { display: flex; justify-content: center; align-items: center; height: 200px; }
 .spin { animation: spin 1s linear infinite; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.status-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 32px; font-size: 14px; font-weight: 500;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--content-bg);
+}
+.status-banner.is-running { border-left: 4px solid #10b981; }
+.status-banner.is-stopped { border-left: 4px solid #ef4444; }
+.status-left { display: flex; align-items: center; gap: 10px; }
+.status-dot { width: 9px; height: 9px; border-radius: 50%; }
+.is-running .status-dot { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); animation: pulse 2s infinite; }
+.is-stopped .status-dot { background: #ef4444; }
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.2); }
+  50%      { box-shadow: 0 0 0 6px rgba(16,185,129,0.05); }
+}
+.status-text { color: var(--heading-color); }
+.status-svc  { color: var(--label-color); font-weight: 400; }
+.status-uptime { color: var(--label-color); font-size: 13px; }
+
+.info-section { background: var(--content-bg); }
+.form-row {
+  display: flex; align-items: flex-start; min-height: 56px;
+  border-bottom: 1px solid var(--border-color);
+}
+.form-row:last-child { border-bottom: none; }
+.form-label {
+  width: 220px; min-width: 220px; padding: 16px 32px;
+  font-size: 14px; color: var(--label-color); display: flex; align-items: center;
+}
+.form-divider { width: 1px; background: var(--divider-color); align-self: stretch; flex-shrink: 0; }
+.form-content { flex: 1; padding: 16px 32px; display: flex; align-items: center; font-size: 14px; color: var(--heading-color); }
+.row-inline { gap: 12px; }
+.mono-val { font-family: 'SF Mono', monospace; font-size: 13px; background: #f5f5f8; padding: 3px 8px; border-radius: 4px; color: #374151; }
+.mono-val.eui { letter-spacing: 0.5px; }
+.inline-badge { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 12px; }
+.inline-badge.ok  { background: #d1fae5; color: #065f46; }
+.inline-badge.err { background: #fee2e2; color: #991b1b; }
+.tag-pill { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 13px; font-weight: 500; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+.tag-pill.purple { background: var(--el-color-primary-light-9); color: var(--el-color-primary); border-color: var(--el-color-primary-light-7); }
 </style>
