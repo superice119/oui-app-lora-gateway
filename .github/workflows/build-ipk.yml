@@ -1,0 +1,119 @@
+name: Build OUI App IPK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'htdoc/**'
+      - 'files/**'
+      - 'Makefile'
+      - '.github/workflows/build-ipk.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build lora-gateway IPK (all arch)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 1. Build frontend ────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: htdoc/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix htdoc
+
+      - name: Build frontend
+        run: npm run build --prefix htdoc
+
+      # ── 2. Assemble IPK ──────────────────────────────────────────────────────
+      # IPK is an `ar` archive: debian-binary + control.tar.gz + data.tar.gz
+      - name: Assemble IPK
+        run: |
+          PKG_NAME="lora-gateway"
+          PKG_VERSION="1.0.0"
+          PKG_RELEASE="1"
+          FULL_VERSION="${PKG_VERSION}-${PKG_RELEASE}"
+          IPK="${PKG_NAME}_${FULL_VERSION}_all.ipk"
+
+          STAGING=$(mktemp -d)
+          DATA="${STAGING}/data"
+          CTRL="${STAGING}/control"
+          mkdir -p "$DATA" "$CTRL"
+
+          # ── data: frontend dist ──
+          mkdir -p "${DATA}/www/views"
+          cp htdoc/dist/${PKG_NAME}.js  "${DATA}/www/views/"
+          cp htdoc/dist/${PKG_NAME}.css "${DATA}/www/views/"
+
+          # ── data: menu registration ──
+          mkdir -p "${DATA}/usr/share/oui/menu.d"
+          cp files/menu.json "${DATA}/usr/share/oui/menu.d/${PKG_NAME}.json"
+
+          # ── data: Lua RPC backend ──
+          mkdir -p "${DATA}/usr/share/oui/rpc"
+          cp files/rpc/lora-gateway.lua "${DATA}/usr/share/oui/rpc/"
+
+          # ── data: default UCI config (conffile) ──
+          mkdir -p "${DATA}/etc/config"
+          cp files/etc/config/lora "${DATA}/etc/config/lora"
+
+          # ── data: lighttpd port override ──
+          mkdir -p "${DATA}/etc/lighttpd/conf.d"
+          cp files/lighttpd/50-oui-port.conf "${DATA}/etc/lighttpd/conf.d/"
+
+          # ── control ──
+          cat > "${CTRL}/control" <<EOF
+          Package: ${PKG_NAME}
+          Version: ${FULL_VERSION}
+          Architecture: all
+          Maintainer: superice119 <superice@163.com>
+          Section: oui
+          Priority: optional
+          Depends: oui-ui-core
+          Description: LoRa Gateway management UI for OUI.
+           Supports basicstation and lora_pkt_fwd with real-time status,
+           service control and configuration.
+          EOF
+
+          # conffiles (don't overwrite on upgrade)
+          echo "/etc/config/lora" > "${CTRL}/conffiles"
+
+          # ── tar archives ──
+          (cd "$DATA" && tar czf "${STAGING}/data.tar.gz" .)
+          (cd "$CTRL" && tar czf "${STAGING}/control.tar.gz" .)
+          echo "2.0" > "${STAGING}/debian-binary"
+
+          # ── ar archive ──
+          ar cr "$IPK" \
+            "${STAGING}/debian-binary" \
+            "${STAGING}/control.tar.gz" \
+            "${STAGING}/data.tar.gz"
+
+          echo "IPK_NAME=${IPK}" >> "$GITHUB_ENV"
+          echo "Built: ${IPK} ($(du -sh $IPK | cut -f1))"
+
+      # ── 3. Upload artifact ───────────────────────────────────────────────────
+      - name: Upload IPK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lora-gateway-ipk
+          path: '*.ipk'
+          retention-days: 30
+
+      # ── 4. Create Release on tag push ────────────────────────────────────────
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '*.ipk'
+          generate_release_notes: true
