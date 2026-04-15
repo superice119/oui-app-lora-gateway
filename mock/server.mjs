@@ -144,6 +144,59 @@ const handlers = {
     result: 'SX1302 ChipID=1 — Hardware OK'
   }),
 
+  // ── system diagnostics & settings ──
+  'system/get_log': () => {
+    const lines = Array.from({ length: 50 }, (_, i) => {
+      const level = ['user.notice', 'user.info', 'user.warn', 'user.err'][i % 4]
+      const proc  = ['lora_pkt_fwd[4056]', 'basicstation[1234]', 'system[1]'][i % 3]
+      const msgs  = ['# RF packets received: 0', '# TX errors: 0', 'Listening on /dev/ttyACM0', '# PULL_DATA sent: 6', 'SX1302 ChipID=1']
+      const d     = new Date(Date.now() - (50 - i) * 30000)
+      return `${d.toDateString().slice(0, 10)} ${d.toTimeString().slice(0, 8)} ${level} ${proc}: ${msgs[i % msgs.length]}`
+    }).join('\n')
+    return { lines }
+  },
+
+  'system/net_tool': (p) => {
+    const { tool, host } = p || {}
+    if (!host) return { output: 'Error: no host specified' }
+    const outputs = {
+      ping:     `PING ${host}: 56 data bytes\n64 bytes from ${host}: icmp_seq=0 ttl=56 time=12.3 ms\n64 bytes from ${host}: icmp_seq=1 ttl=56 time=11.8 ms\n--- ${host} ping statistics ---\n2 packets transmitted, 2 received, 0% packet loss`,
+      trace:    `traceroute to ${host}\n 1  192.168.1.1  1.2 ms\n 2  10.0.0.1  8.4 ms\n 3  ${host}  14.2 ms`,
+      nslookup: `Server: 8.8.8.8\nAddress: 8.8.8.8#53\n\nNon-authoritative answer:\nName: ${host}\nAddress: 93.184.216.34`
+    }
+    return { output: outputs[tool] || 'Unknown tool' }
+  },
+
+  'system/file_list': (p) => {
+    const path = p?.path || '/'
+    const mockFs = {
+      '/':              [{ type: 'dir', name: 'etc' }, { type: 'dir', name: 'tmp' }, { type: 'dir', name: 'mnt' }, { type: 'file', name: 'banner' }, { type: 'file', name: 'openwrt_release' }],
+      '/mnt':           [{ type: 'dir', name: 'mmcblk0p1' }],
+      '/mnt/mmcblk0p1': [{ type: 'file', name: 'wisgateos.bin' }, { type: 'dir', name: 'logs' }, { type: 'file', name: 'config.json' }],
+      '/etc':           [{ type: 'file', name: 'config' }, { type: 'dir', name: 'lora' }, { type: 'file', name: 'hostname' }],
+    }
+    return { path, entries: mockFs[path] || [] }
+  },
+
+  'system/get_firmware': () => ({
+    version: 'ImmortalWrt_1.0.0_Oolite-V8', build_date: '2025-04-01'
+  }),
+
+  'system/get_general': () => ({
+    hostname: 'oolite-v8', timezone: 'Asia/Shanghai', ntp: 'pool.ntp.org'
+  }),
+
+  'system/set_general': (p) => {
+    console.log('[mock] set_general', p)
+    return { ok: true }
+  },
+
+  // ── network status ──
+  'network/get_status': () => ({
+    wan: { iface: 'eth0', proto: 'DHCP', ip: '192.168.100.50', gateway: '192.168.100.1', dns: '8.8.8.8' },
+    lan: { iface: 'br-lan', ip: '192.168.1.1', mask: '255.255.255.0' }
+  }),
+
   'lora-gateway/set_config': (p) => {
     if (p?.basicstation) {
       Object.assign(state.config.basicstation, p.basicstation)

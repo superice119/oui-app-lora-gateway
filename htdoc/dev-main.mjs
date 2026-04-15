@@ -12,6 +12,10 @@ import IndexPage   from './index.vue'
 import LoraPage    from './service.vue'   // LoRa Configuration
 import ConfigPage  from './config.vue'    // keep for now as redirect target
 import PlaceholderPage from './placeholder.vue'
+import DiagPage from './diag.vue'
+import SysPage  from './sys.vue'
+import ExtPage  from './ext.vue'
+import NetPage  from './net.vue'
 
 const i18n = createI18n({
   legacy: false,
@@ -27,10 +31,10 @@ const router = createRouter({
     { path: '/lora', component: LoraPage    },
     { path: '/service', redirect: '/lora'   },
     { path: '/config',  component: ConfigPage },
-    { path: '/net',     component: PlaceholderPage, meta: { title: 'Network'          } },
-    { path: '/diag',    component: PlaceholderPage, meta: { title: 'Diagnostics'      } },
-    { path: '/sys',     component: PlaceholderPage, meta: { title: 'System Settings'  } },
-    { path: '/ext',     component: PlaceholderPage, meta: { title: 'Extensions'       } },
+    { path: '/net',     component: NetPage  },
+    { path: '/diag',    component: DiagPage },
+    { path: '/sys',     component: SysPage  },
+    { path: '/ext',     component: ExtPage  },
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ]
 })
