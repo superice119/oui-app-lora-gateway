@@ -78,7 +78,7 @@
       </div>
 
       <!-- Section divider before service-specific config -->
-      <div v-if="pendingService !== 'built_in_ns'" class="section-divider">
+      <div class="section-divider">
         <span>Network Configuration</span>
       </div>
 
@@ -158,16 +158,6 @@
         </div>
       </template>
 
-      <!-- Built-in NS placeholder -->
-      <template v-if="pendingService === 'built_in_ns'">
-        <div class="form-row">
-          <div class="form-label">Network Server</div>
-          <div class="form-divider" />
-          <div class="form-content">
-            <span class="placeholder-text">Built-in network server configuration is managed separately.</span>
-          </div>
-        </div>
-      </template>
 
       <!-- Service status -->
       <div class="section-sep" />
@@ -235,7 +225,7 @@ const pf  = reactive({ server_address: '', serv_port_up: 1700, serv_port_down: 1
 const workModes = [
   { value: 'lora_pkt_fwd',  label: 'Packet forwarder',       desc: 'Forward LoRa packets to a remote network server via UDP' },
   { value: 'basicstation',  label: 'Basics station',          desc: 'Connect to LNS using WebSocket (recommended)' },
-  { value: 'built_in_ns',   label: 'Built-in network server', desc: 'Run a local LoRaWAN network server on this gateway' },
+
 ]
 
 const logLevels = ['ERROR', 'WARNING', 'NOTICE', 'INFO', 'DEBUG']
