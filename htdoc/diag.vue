@@ -2,21 +2,23 @@
   <div class="page-wrap">
     <div class="page-title">Diagnostics</div>
 
-    <!-- Tab bar -->
-    <div class="tab-bar">
-      <div :class="['tab', { active: tab === 'log' }]" @click="tab = 'log'">System log</div>
-      <div :class="['tab', { active: tab === 'net' }]" @click="tab = 'net'">Network utilities</div>
+    <!-- Tab bar with auto-refresh control -->
+    <div class="tab-bar-wrap">
+      <div class="tab-bar">
+        <span class="tab" :class="{active: tab==='log'}" @click="tab='log'">System log</span>
+        <span class="tab" :class="{active: tab==='net'}" @click="tab='net'">Network utilities</span>
+      </div>
+      <div v-if="tab==='log'" class="auto-refresh-ctrl">
+        <el-switch v-model="autoRefresh" style="--el-switch-on-color: #7c3aed" />
+        <span>Auto refresh</span>
+      </div>
     </div>
 
     <!-- System log tab -->
     <div v-if="tab === 'log'" class="card">
-      <div class="log-toolbar">
-        <div class="log-toolbar-right">
-          <el-switch v-model="autoRefresh" style="--el-switch-on-color: #7c3aed" />
-          <span class="auto-label">Auto refresh</span>
-        </div>
+      <div class="log-output">
+        <div v-for="(line, i) in logLines" :key="i" :style="colorLine(line)">{{ line }}</div>
       </div>
-      <pre class="log-output">{{ logText }}</pre>
     </div>
 
     <!-- Network utilities tab -->
@@ -50,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import { ElSwitch, ElTooltip } from 'element-plus'
 
 const { proxy } = getCurrentInstance()
@@ -62,6 +64,16 @@ const netHost     = ref('')
 const netOutput   = ref('Add IPv4 or a hostname to see results here.')
 
 let logTimer = null
+
+const logLines = computed(() => logText.value ? logText.value.split('\n') : [])
+
+function colorLine(line) {
+  if (line.includes('user.err'))    return 'color:#f87171'
+  if (line.includes('user.warn'))   return 'color:#fbbf24'
+  if (line.includes('user.notice')) return 'color:#e2e8f0'
+  if (line.includes('user.info'))   return 'color:#94a3b8'
+  return 'color:#d4d4d4'
+}
 
 async function fetchLog() {
   try {
@@ -106,9 +118,14 @@ onUnmounted(() => stopTimer())
 <style scoped>
 .page-wrap  { padding: 32px; max-width: 1100px; }
 .page-title { font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 24px; }
-.tab-bar    { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 24px; }
+.tab-bar-wrap {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb; margin-bottom: 20px;
+}
+.tab-bar    { display: flex; }
 .tab        { padding: 10px 20px; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .tab.active { color: #111827; font-weight: 700; border-bottom-color: #111827; }
+.auto-refresh-ctrl { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6b7280; padding-bottom: 1px; }
 .card       { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 16px; }
 .form-row   { display: flex; align-items: flex-start; padding: 16px 0; }
 .form-label { width: 240px; min-width: 240px; color: #6b7280; font-size: 14px; padding-right: 24px; padding-top: 4px; }
@@ -116,14 +133,12 @@ onUnmounted(() => stopTimer())
 .pill-btn   { border: 1px solid #d1d5db; border-radius: 20px; padding: 7px 20px; background: white; cursor: pointer; font-size: 14px; color: #374151; }
 .pill-btn:hover { background: #f9fafb; }
 
-.log-toolbar       { display: flex; justify-content: flex-end; margin-bottom: 12px; }
-.log-toolbar-right { display: flex; align-items: center; gap: 8px; }
-.auto-label        { font-size: 14px; color: #6b7280; }
 .log-output {
-  background: #1e1e2e; color: #d4d4d4; font-family: monospace; font-size: 12px;
+  background: #1e1e2e; font-family: monospace; font-size: 12px;
   padding: 16px; border-radius: 6px; min-height: 400px; overflow-y: auto;
-  white-space: pre-wrap; word-break: break-all; margin: 0;
+  word-break: break-all;
 }
+.log-output > div { line-height: 1.6; white-space: pre-wrap; }
 
 .net-header       { margin-bottom: 8px; }
 .net-field-label  { font-size: 14px; color: #374151; font-weight: 500; }

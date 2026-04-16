@@ -16,45 +16,49 @@
         <div class="form-row">
           <div class="form-label">Hostname</div>
           <div class="form-content">
-            <input v-model="general.hostname" class="rak-input" placeholder="oolite-v8" />
+            <el-input v-model="general.hostname" style="width:300px" placeholder="oolite-v8" />
           </div>
         </div>
         <div class="form-row">
           <div class="form-label">Timezone</div>
           <div class="form-content">
-            <select v-model="general.timezone" class="rak-select">
-              <option v-for="tz in timezones" :key="tz.value" :value="tz.value">{{ tz.label }}</option>
-            </select>
+            <el-select v-model="general.timezone" style="width:300px">
+              <el-option v-for="tz in timezones" :key="tz.value" :label="tz.label" :value="tz.value"/>
+            </el-select>
           </div>
         </div>
         <div class="form-row no-border">
           <div class="form-label">NTP Server</div>
           <div class="form-content">
-            <input v-model="general.ntp" class="rak-input" placeholder="pool.ntp.org" />
+            <el-input v-model="general.ntp" style="width:300px" placeholder="pool.ntp.org" />
           </div>
         </div>
       </div>
       <div class="sticky-footer">
-        <button class="pill-btn primary" @click="saveGeneral">Save</button>
+        <el-button type="primary" @click="saveGeneral" :loading="saving">Save</el-button>
       </div>
     </template>
 
     <!-- ── Backup and restore ── -->
     <template v-if="tab === 'backup'">
       <div class="card">
-        <div class="section-title">Backup configuration</div>
-        <p class="section-desc">Download a backup of your current gateway configuration as a tar.gz archive.</p>
-        <button class="pill-btn">Download backup</button>
+        <div class="card-inner">
+          <div class="section-title">Backup configuration</div>
+          <p class="section-desc">Download a backup of your current gateway configuration as a tar.gz archive.</p>
+          <button class="pill-btn">Download backup</button>
+        </div>
       </div>
       <div class="card">
-        <div class="section-title">Restore configuration</div>
-        <p class="section-desc">Upload a previously downloaded backup file to restore the configuration.</p>
-        <div class="drop-zone">
-          <el-icon :size="28" color="#7c3aed"><Upload /></el-icon>
-          <p>Drag & drop your backup file here or <span class="purple-link">browse</span></p>
-        </div>
-        <div style="margin-top: 16px;">
-          <button class="pill-btn primary">Restore</button>
+        <div class="card-inner">
+          <div class="section-title">Restore configuration</div>
+          <p class="section-desc">Upload a previously downloaded backup file to restore the configuration.</p>
+          <div class="drop-zone">
+            <el-icon :size="28" color="#7c3aed"><Upload /></el-icon>
+            <p>Drag &amp; drop your backup file here or <span class="purple-link">browse</span></p>
+          </div>
+          <div style="margin-top: 16px;">
+            <button class="pill-btn primary">Restore</button>
+          </div>
         </div>
       </div>
     </template>
@@ -70,22 +74,25 @@
               <span class="fw-version">{{ firmwareVersion }}</span>
             </div>
             <span class="form-sublabel" style="margin-top: 20px; display: block;">Upload the new firmware file</span>
-            <div
-              class="fw-drop-zone"
-              @dragover.prevent
-              @drop.prevent="onFwDrop"
-              @click="fwInput.click()"
-            >
-              <el-icon :size="28" color="#7c3aed"><Upload /></el-icon>
-              <p>Drop your firmware file here or <span class="purple-link">choose file</span></p>
-              <p v-if="fwFile" class="fw-file-name">{{ fwFile.name }}</p>
+            <div class="drop-zone" @click="$refs.fileInput.click()"
+                 @dragover.prevent @drop.prevent="handleDrop">
+              <div v-if="!firmwareFile">
+                <el-icon :size="32" color="#7c3aed"><UploadFilled /></el-icon>
+                <p style="margin:8px 0 4px">Drop your firmware file here or
+                  <span class="choose-link">choose file</span></p>
+                <p style="font-size:12px;color:#9ca3af">Accepts .bin files</p>
+              </div>
+              <div v-else class="file-chosen">
+                <el-icon color="#16a34a"><CircleCheck /></el-icon>
+                {{ firmwareFile.name }}
+              </div>
+              <input ref="fileInput" type="file" accept=".bin" style="display:none" @change="handleFileChange"/>
             </div>
-            <input ref="fwInput" type="file" style="display:none" @change="onFwSelect" />
             <div style="margin-top: 16px;">
               <el-checkbox v-model="keepSettings">Keep settings after updating</el-checkbox>
             </div>
             <div style="margin-top: 16px;">
-              <button class="pill-btn" :disabled="!fwFile" :style="!fwFile ? 'opacity:0.5;cursor:not-allowed' : ''">Update</button>
+              <button class="pill-btn" :disabled="!firmwareFile" :style="!firmwareFile ? 'opacity:0.5;cursor:not-allowed' : ''">Update</button>
             </div>
           </div>
         </div>
@@ -134,8 +141,8 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, getCurrentInstance } from 'vue'
-import { ElMessage, ElCheckbox } from 'element-plus'
-import { Upload, Folder, Document, ArrowRight } from '@element-plus/icons-vue'
+import { ElMessage, ElCheckbox, ElSelect, ElOption, ElInput, ElButton } from 'element-plus'
+import { Upload, Folder, Document, ArrowRight, UploadFilled, CircleCheck } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
 
@@ -143,6 +150,7 @@ const tab = ref('general')
 
 // General settings
 const general = reactive({ hostname: 'oolite-v8', timezone: 'Asia/Shanghai', ntp: 'pool.ntp.org' })
+const saving = ref(false)
 const timezones = [
   { value: 'UTC',            label: 'UTC' },
   { value: 'Asia/Shanghai',  label: 'Asia/Shanghai (CST, UTC+8)' },
@@ -157,27 +165,29 @@ const timezones = [
 ]
 
 async function saveGeneral() {
+  saving.value = true
   try {
     await proxy.$oui.call('system', 'set_general', { ...general })
     ElMessage({ message: 'Settings saved', type: 'success', duration: 2000 })
   } catch (e) {
     ElMessage.error(e.message)
+  } finally {
+    saving.value = false
   }
 }
 
 // Firmware
 const firmwareVersion = ref('ImmortalWrt_1.0.0_Oolite-V8')
 const keepSettings    = ref(true)
-const fwFile          = ref(null)
-const fwInput         = ref(null)
+const firmwareFile    = ref(null)
 
-function onFwDrop(e) {
+function handleDrop(e) {
   const f = e.dataTransfer.files[0]
-  if (f) fwFile.value = f
+  if (f) firmwareFile.value = f
 }
-function onFwSelect(e) {
+function handleFileChange(e) {
   const f = e.target.files[0]
-  if (f) fwFile.value = f
+  if (f) firmwareFile.value = f
 }
 
 // File browser
@@ -233,11 +243,11 @@ onMounted(() => { loadGeneral(); loadFirmware(); fetchFiles() })
 .tab-bar    { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 24px; }
 .tab        { padding: 10px 20px; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .tab.active { color: #111827; font-weight: 700; border-bottom-color: #111827; }
-.card       { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 16px; }
-.form-row   { display: flex; align-items: flex-start; padding: 16px 0; border-bottom: 1px solid #f3f4f6; }
+.card       { background: #fff; border-radius: 8px; padding: 0 24px; margin-bottom: 16px; }
+.form-row   { display: flex; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid #f3f4f6; }
 .form-row.no-border { border-bottom: none; }
 .form-label { width: 240px; min-width: 240px; color: #6b7280; font-size: 14px; padding-right: 24px; padding-top: 6px; }
-.form-content { flex: 1; }
+.form-content { flex: 1; padding-top: 2px; }
 .pill-btn   { border: 1px solid #d1d5db; border-radius: 20px; padding: 7px 20px; background: white; cursor: pointer; font-size: 14px; color: #374151; }
 .pill-btn:hover:not(:disabled) { background: #f9fafb; }
 .pill-btn.primary { background: #7c3aed; color: white; border-color: #7c3aed; }
@@ -255,17 +265,21 @@ onMounted(() => { loadGeneral(); loadFirmware(); fetchFiles() })
 }
 .rak-select:focus { border-color: #7c3aed; }
 
-.section-title { font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 8px; }
+.section-title { font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 8px; padding-top: 20px; }
 .section-desc  { font-size: 14px; color: #6b7280; margin-bottom: 16px; }
 .drop-zone {
-  border: 2px dashed #7c3aed; background: #f5f0fe; border-radius: 8px;
-  min-height: 100px; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 8px; padding: 24px; cursor: pointer;
+  border: 1.5px dashed #7c3aed; background: #faf5ff; border-radius: 8px;
+  min-height: 120px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; text-align: center; padding: 24px; margin: 12px 0;
+  transition: background 0.15s;
 }
+.drop-zone:hover { background: #f3e8ff; }
 .drop-zone p { font-size: 14px; color: #6b7280; margin: 0; }
+.choose-link { color: #7c3aed; text-decoration: underline; }
+.file-chosen { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #374151; }
 .purple-link { color: #7c3aed; text-decoration: underline; cursor: pointer; }
 
-.fw-current   { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.card-inner { padding: 20px 0; }
 .form-sublabel { font-size: 12px; color: #9ca3af; }
 .fw-version   { font-size: 15px; font-weight: 700; color: #111827; }
 .fw-drop-zone {
@@ -299,7 +313,7 @@ onMounted(() => { loadGeneral(); loadFirmware(); fetchFiles() })
 /* Sticky footer */
 .sticky-footer {
   position: sticky; bottom: 0; background: white; border-top: 1px solid #e5e7eb;
-  padding: 16px 24px; display: flex; justify-content: flex-end;
-  margin-top: 8px; border-radius: 0 0 8px 8px;
+  padding: 16px 32px; display: flex; justify-content: flex-end;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
 }
 </style>

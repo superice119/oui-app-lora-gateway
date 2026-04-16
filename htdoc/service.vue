@@ -1,5 +1,6 @@
 <template>
   <div class="rak-page">
+    <div class="lora-page-title">LoRa Configuration</div>
     <div class="info-section">
 
       <!-- Work mode -->
@@ -18,7 +19,10 @@
               <span class="radio-circle" :class="{ checked: pendingService === svc.value }">
                 <span class="radio-dot" />
               </span>
-              <span class="radio-label">{{ svc.label }}</span>
+              <div class="radio-text">
+                <span class="radio-label">{{ svc.label }}</span>
+                <span class="radio-desc">{{ svc.desc }}</span>
+              </div>
             </label>
           </div>
         </div>
@@ -58,14 +62,11 @@
             </div>
           </div>
           <!-- Expandable detail panel -->
-          <div class="freq-detail-bar" @click="showFreqDetails = !showFreqDetails">
-            <span>View detailed regional parameters of the frequency plan.</span>
-            <div class="freq-detail-actions">
-              <el-icon :size="16" :class="showFreqDetails ? 'rotated' : ''"><ArrowDown /></el-icon>
-              <el-icon :size="16" color="#10b981"><Select /></el-icon>
-            </div>
+          <div class="freq-expand" @click="showFreqDetail = !showFreqDetail">
+            <span>View detailed regional parameters</span>
+            <el-icon><ArrowDown v-if="!showFreqDetail" /><ArrowUp v-else /></el-icon>
           </div>
-          <div v-if="showFreqDetails" class="freq-detail-panel">
+          <div v-if="showFreqDetail" class="freq-detail-panel">
             <div class="freq-param-grid">
               <div v-for="ch in freqChannels" :key="ch.name" class="freq-param-row">
                 <span class="param-name">{{ ch.name }}</span>
@@ -76,8 +77,10 @@
         </div>
       </div>
 
-      <!-- Divider before service-specific config -->
-      <div v-if="pendingService !== 'built_in_ns'" class="section-sep" />
+      <!-- Section divider before service-specific config -->
+      <div v-if="pendingService !== 'built_in_ns'" class="section-divider">
+        <span>Network Configuration</span>
+      </div>
 
       <!-- Basics Station config (when selected) -->
       <template v-if="pendingService === 'basicstation'">
@@ -213,7 +216,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowDown, Select } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowUp, Select } from '@element-plus/icons-vue'
 
 const { t }     = useI18n()
 const { proxy } = getCurrentInstance()
@@ -222,7 +225,7 @@ const status         = ref({})
 const pendingService = ref('basicstation')
 const acting         = ref(false)
 const saving         = ref(false)
-const showFreqDetails = ref(false)
+const showFreqDetail = ref(false)
 let timer
 
 const cfg = reactive({ log_level: 'NOTICE', region: 'EU868' })
@@ -230,9 +233,9 @@ const bs  = reactive({ tc_uri: '', cups_uri: '', auth_mode: 'no_auth', api_key: 
 const pf  = reactive({ server_address: '', serv_port_up: 1700, serv_port_down: 1700 })
 
 const workModes = [
-  { value: 'lora_pkt_fwd',  label: 'Packet forwarder'       },
-  { value: 'basicstation',  label: 'Basics station'          },
-  { value: 'built_in_ns',   label: 'Built-in network server' },
+  { value: 'lora_pkt_fwd',  label: 'Packet forwarder',       desc: 'Forward LoRa packets to a remote network server via UDP' },
+  { value: 'basicstation',  label: 'Basics station',          desc: 'Connect to LNS using WebSocket (recommended)' },
+  { value: 'built_in_ns',   label: 'Built-in network server', desc: 'Run a local LoRaWAN network server on this gateway' },
 ]
 
 const logLevels = ['ERROR', 'WARNING', 'NOTICE', 'INFO', 'DEBUG']
@@ -349,7 +352,7 @@ onUnmounted(() => clearInterval(timer))
 
 .form-label {
   width: 240px; min-width: 240px; padding: 20px 32px;
-  font-size: 14px; color: var(--label-color); display: flex; align-items: flex-start;
+  font-size: 14px; color: #6b7280; font-weight: 500; display: flex; align-items: flex-start;
 }
 .form-divider { width: 1px; background: var(--divider-color); align-self: stretch; flex-shrink: 0; }
 .form-content { flex: 1; padding: 16px 32px; display: flex; align-items: flex-start; flex-wrap: wrap; }
@@ -383,16 +386,11 @@ onUnmounted(() => clearInterval(timer))
 /* Frequency plan */
 .freq-content { flex-direction: column; gap: 14px; padding-top: 16px; padding-bottom: 16px; }
 .freq-top { display: flex; align-items: flex-start; }
-.freq-detail-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  background: #f9fafb; border: 1px solid var(--border-color);
-  border-radius: 8px; padding: 12px 16px; cursor: pointer;
-  font-size: 13px; color: var(--label-color);
-  transition: background 0.15s;
+.freq-expand {
+  display: flex; align-items: center; gap: 6px; color: #7c3aed;
+  font-size: 13px; cursor: pointer; padding: 8px 0;
 }
-.freq-detail-bar:hover { background: #f3f4f6; }
-.freq-detail-actions { display: flex; gap: 8px; align-items: center; }
-.rotated { transform: rotate(180deg); transition: transform 0.2s; }
+.freq-expand:hover { opacity: 0.8; }
 .freq-detail-panel { background: #f9fafb; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; }
 .freq-param-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .freq-param-row { display: flex; flex-direction: column; gap: 2px; }
@@ -401,16 +399,35 @@ onUnmounted(() => clearInterval(timer))
 
 /* Custom radio */
 .radio-stack { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
-.rak-radio { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+.rak-radio { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; user-select: none; }
 .radio-circle {
   width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d1d5db;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: border-color 0.15s;
+  flex-shrink: 0; transition: border-color 0.15s; margin-top: 2px;
 }
 .radio-circle.checked { border-color: #1e1048; }
 .radio-dot { width: 10px; height: 10px; border-radius: 50%; background: transparent; transition: background 0.15s; }
 .radio-circle.checked .radio-dot { background: #1e1048; }
+.radio-text { display: flex; flex-direction: column; }
 .radio-label { font-size: 14px; color: #374151; }
+.radio-desc  { color: #9ca3af; font-size: 12px; margin-top: 2px; }
+
+/* Page title */
+.lora-page-title { font-size: 28px; font-weight: 700; color: #111827; padding: 28px 32px 0; margin-bottom: 0; }
+
+/* Frequency expand */
+.freq-expand {
+  display: flex; align-items: center; gap: 6px; color: #7c3aed;
+  font-size: 13px; cursor: pointer; padding: 8px 0;
+}
+.freq-expand:hover { opacity: 0.8; }
+
+/* Section divider */
+.section-divider {
+  padding: 16px 32px 8px; font-size: 12px; font-weight: 700; color: #9ca3af;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  border-top: 1px solid #f3f4f6; margin-top: 8px;
+}
 
 /* Status */
 .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
@@ -442,8 +459,8 @@ onUnmounted(() => clearInterval(timer))
 
 /* Footer */
 .page-footer {
-  position: sticky; bottom: 0; background: var(--content-bg);
-  border-top: 1px solid var(--border-color); padding: 16px 32px;
-  display: flex; justify-content: flex-end; margin-top: auto;
+  position: sticky; bottom: 0; background: #fff;
+  border-top: 1px solid #e5e7eb; padding: 16px 32px;
+  z-index: 10; display: flex; justify-content: flex-end; margin-top: auto;
 }
 </style>

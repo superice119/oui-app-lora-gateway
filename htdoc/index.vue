@@ -56,8 +56,6 @@
                 </div>
               </div>
 
-              <div class="card-divider" />
-
               <!-- Service status row -->
               <div class="svc-status-row">
                 <span class="svc-dot" :class="status.running ? 'dot-green' : 'dot-red'" />
@@ -65,6 +63,7 @@
                 <span class="svc-badge" :class="status.running ? 'badge-running' : 'badge-stopped'">
                   {{ status.running ? 'Running' : 'Stopped' }}
                 </span>
+                <span class="svc-uptime">{{ uptimeStr }}</span>
               </div>
             </div>
 
@@ -120,58 +119,35 @@
       <!-- ── LoRa® statistics tab ── -->
       <div v-else class="dash-body stats-body">
 
-        <!-- Top stat cards -->
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-card-title">Packets</div>
-            <div class="stat-numbers">
-              <div class="stat-item">
-                <el-icon :size="22" color="#6b7280"><Download /></el-icon>
-                <span class="stat-num">{{ lStats.rx }}</span>
-                <span class="stat-sub">RECEIVED</span>
-              </div>
-              <div class="stat-sep" />
-              <div class="stat-item">
-                <el-icon :size="22" color="#6b7280"><Upload /></el-icon>
-                <span class="stat-num">{{ lStats.tx }}</span>
-                <span class="stat-sub">TRANSMITTED</span>
-              </div>
+        <!-- 4-col metric row -->
+        <div class="info-card stats-metric-card">
+          <div class="metric-grid stats-metric-grid">
+            <div class="metric-cell">
+              <div class="metric-val">{{ lStats.rx }}</div>
+              <div class="metric-label">RX PACKETS</div>
             </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-card-title">End devices</div>
-            <div class="stat-numbers">
-              <div class="stat-item">
-                <el-icon :size="22" color="#6b7280"><Connection /></el-icon>
-                <span class="stat-num">{{ lStats.devices_active }}</span>
-                <span class="stat-sub">ACTIVE</span>
-              </div>
-              <div class="stat-sep" />
-              <div class="stat-item">
-                <el-icon :size="22" color="#6b7280"><Monitor /></el-icon>
-                <span class="stat-num">{{ lStats.devices_busy }}</span>
-                <span class="stat-sub">BUSY</span>
-              </div>
+            <div class="metric-cell">
+              <div class="metric-val">{{ lStats.tx }}</div>
+              <div class="metric-label">TX PACKETS</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-val">{{ lStats.devices_active }}</div>
+              <div class="metric-label">ACTIVE DEVICES</div>
+            </div>
+            <div class="metric-cell stats-last-cell">
+              <div class="metric-val">{{ lStats.devices_busy }}</div>
+              <div class="metric-label">BUSY DEVICES</div>
             </div>
           </div>
         </div>
 
-        <!-- Channel usage placeholder -->
-        <div class="chart-card">
-          <div class="chart-card-title">Channel usage</div>
-          <div class="chart-empty">
-            <el-icon :size="32" color="#d1d5db"><DataLine /></el-icon>
-            <p>Channel statistics are available when the LoRa service is running and connected to a network server.</p>
+        <!-- Two side-by-side chart placeholders -->
+        <div class="charts-row">
+          <div class="chart-placeholder">
+            <span class="chart-placeholder-label">Channel usage</span>
           </div>
-        </div>
-
-        <!-- Traffic stats placeholder -->
-        <div class="chart-card">
-          <div class="chart-card-title">Uplink / Downlink traffic</div>
-          <div class="chart-empty">
-            <el-icon :size="32" color="#d1d5db"><TrendCharts /></el-icon>
-            <p>Traffic data will appear here once packets are being processed.</p>
+          <div class="chart-placeholder">
+            <span class="chart-placeholder-label">SNR &amp; RSSI</span>
           </div>
         </div>
 
@@ -184,10 +160,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  Loading, ArrowRight, Download, Upload,
-  Connection, Monitor, DataLine, TrendCharts
-} from '@element-plus/icons-vue'
+import { Loading, ArrowRight } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
 const { proxy } = getCurrentInstance()
@@ -304,14 +277,14 @@ onUnmounted(() => clearInterval(timer))
 .metric-cell.full { grid-column: 1 / -1; border-right: none; }
 
 .metric-val {
-  font-size: 15px; font-weight: 600; color: var(--heading-color);
-  line-height: 1.3; margin-bottom: 4px;
+  font-size: 24px; font-weight: 700; color: #111827;
+  line-height: 1.2; margin-bottom: 4px;
 }
 .metric-val.mono {
   font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
-  font-size: 13px;
+  font-size: 16px;
 }
-.metric-val.small { font-size: 12px; letter-spacing: 0.3px; }
+.metric-val.small { font-size: 13px; letter-spacing: 0.3px; }
 .metric-label {
   font-size: 11px; font-weight: 500; color: #9ca3af;
   text-transform: uppercase; letter-spacing: 0.07em;
@@ -322,6 +295,7 @@ onUnmounted(() => clearInterval(timer))
 .svc-status-row {
   display: flex; align-items: center; gap: 10px;
   padding: 14px 24px;
+  border-top: 1px solid #f3f4f6;
 }
 .svc-dot {
   width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
@@ -333,9 +307,10 @@ onUnmounted(() => clearInterval(timer))
   50%      { box-shadow: 0 0 0 6px rgba(16,185,129,.05); }
 }
 .svc-name   { font-size: 14px; font-weight: 600; color: var(--heading-color); }
-.svc-badge  { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 12px; margin-left: auto; }
-.badge-running { background: #d1fae5; color: #065f46; }
+.svc-badge  { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; margin-left: auto; }
+.badge-running { background: #dcfce7; color: #16a34a; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
 .badge-stopped { background: #fee2e2; color: #991b1b; }
+.svc-uptime { color: #9ca3af; font-size: 13px; margin-left: 8px; }
 
 /* ── Aside cards ── */
 .aside-card {
@@ -369,32 +344,23 @@ onUnmounted(() => clearInterval(timer))
 
 /* ── Stats tab ── */
 .stats-body { padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; }
-.stats-row  { display: flex; gap: 16px; }
-.stat-card  {
-  flex: 1; background: var(--content-bg); border: 1px solid var(--border-color);
-  border-radius: 8px; padding: 20px 24px;
-}
-.stat-card-title { font-size: 14px; font-weight: 600; color: var(--heading-color); margin-bottom: 16px; }
-.stat-numbers { display: flex; align-items: center; gap: 0; }
-.stat-item { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
-.stat-num  { font-size: 28px; font-weight: 700; color: var(--heading-color); line-height: 1; }
-.stat-sub  { font-size: 11px; color: #9ca3af; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
-.stat-sep  { width: 1px; height: 40px; background: var(--border-color); }
 
-.chart-card {
-  background: var(--content-bg); border: 1px solid var(--border-color);
-  border-radius: 8px; padding: 20px 24px;
+.stats-metric-card { background: var(--content-bg); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+.stats-metric-grid { grid-template-columns: 1fr 1fr 1fr 1fr !important; }
+.stats-metric-grid .metric-cell:nth-child(even) { border-right: 1px solid var(--border-color); }
+.stats-metric-grid .metric-cell:nth-child(4n) { border-right: none; }
+.stats-last-cell { border-right: none !important; }
+
+.charts-row { display: flex; gap: 16px; }
+.chart-placeholder {
+  flex: 1; background: #f3f4f6; border-radius: 8px; height: 160px;
+  display: flex; align-items: center; justify-content: center;
 }
-.chart-card-title { font-size: 14px; font-weight: 600; color: var(--heading-color); margin-bottom: 16px; }
-.chart-empty {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 40px 20px; gap: 12px; text-align: center;
-}
-.chart-empty p { font-size: 13px; color: var(--label-color); max-width: 320px; line-height: 1.6; margin: 0; }
+.chart-placeholder-label { font-size: 14px; color: #9ca3af; font-weight: 500; }
 
 @media (max-width: 900px) {
   .dash-columns { flex-direction: column; }
   .dash-aside   { width: 100%; }
-  .stats-row    { flex-direction: column; }
+  .charts-row   { flex-direction: column; }
 }
 </style>
